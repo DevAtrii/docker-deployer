@@ -181,7 +181,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-muted-foreground">Registry Tokens</span>
-                <Badge variant="outline" className="h-5 rounded-sm">{profile?.registry_tokens || 0}</Badge>
+                <Badge variant="outline" className="h-5 rounded-sm">{profile?.token_aliases?.length || 0}</Badge>
               </div>
             </div>
           </CardContent>
