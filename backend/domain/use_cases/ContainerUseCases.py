@@ -51,8 +51,8 @@ class ContainerUseCases:
     def delete_container(self, user_id: str, container_id: str) -> None:
         self.docker_repo.delete_container(user_id, container_id)
 
-    def get_logs(self, user_id: str, container_id: str) -> str:
-        return self.docker_repo.get_logs(user_id, container_id)
+    def get_logs(self, user_id: str, container_id: str, limit: int = 100, page: int = 1) -> str:
+        return self.docker_repo.get_logs(user_id, container_id, limit, page)
 
     def get_stats(self, user_id: str, container_id: str) -> dict:
         return self.docker_repo.get_stats(user_id, container_id)

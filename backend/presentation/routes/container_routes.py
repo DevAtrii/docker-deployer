@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 from domain.use_cases.ContainerUseCases import ContainerUseCases
 from presentation.middleware.auth_middleware import token_required
 from dataclasses import asdict
@@ -97,8 +97,24 @@ def get_container_routes(container_use_cases: ContainerUseCases, auth_use_cases)
     @token_required(auth_use_cases)
     def get_logs(container_id):
         try:
-            logs = container_use_cases.get_logs(request.user_id, container_id)
+            limit = int(request.args.get('limit', 100))
+            page = int(request.args.get('page', 1))
+            logs = container_use_cases.get_logs(request.user_id, container_id, limit, page)
             return jsonify({'logs': logs}), 200
+        except Exception as e:
+            return jsonify({'message': str(e)}), 400
+
+    @bp.route('/<container_id>/logs/export', methods=['GET'])
+    @token_required(auth_use_cases)
+    def export_logs(container_id):
+        try:
+            logs = container_use_cases.get_logs(request.user_id, container_id, limit='all')
+            filename = f"container_{container_id}_logs.txt"
+            return Response(
+                logs,
+                mimetype="text/plain",
+                headers={"Content-disposition": f"attachment; filename={filename}"}
+            )
         except Exception as e:
             return jsonify({'message': str(e)}), 400
 

@@ -35,7 +35,8 @@ import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import {
   Play, Square, Pause, RotateCcw, Trash2, Terminal, Plus, Box,
-  Loader2, RefreshCcw, MoreVertical, ExternalLink, Activity, HardDrive, Cpu
+  Loader2, RefreshCcw, MoreVertical, ExternalLink, Activity, HardDrive, Cpu,
+  Download, ChevronRight
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/src/data/api';
@@ -385,9 +386,7 @@ export default function ContainersPage() {
             <DialogDescription>Real-time terminal output from the container.</DialogDescription>
           </DialogHeader>
           <div className="px-6 pb-6">
-            <ScrollArea className="h-[450px] w-full rounded-2xl bg-zinc-950 p-4 border border-border/50">
-              <LogsViewer containerId={logsModal.containerId} />
-            </ScrollArea>
+            <LogsViewer containerId={logsModal.containerId} />
           </div>
         </DialogContent>
       </Dialog>
@@ -438,16 +437,106 @@ export default function ContainersPage() {
 }
 
 function LogsViewer({ containerId }: { containerId: string | null }) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['logs', containerId],
-    queryFn: async () => (await apiClient.get(`/containers/${containerId}/logs`)).data.logs,
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(100);
+
+  const { data, isLoading, isPlaceholderData } = useQuery({
+    queryKey: ['logs', containerId, limit, page],
+    queryFn: async () => (await apiClient.get(`/containers/${containerId}/logs?limit=${limit}&page=${page}`)).data.logs,
     enabled: !!containerId,
-    refetchInterval: 3000,
+    placeholderData: (prev) => prev,
+    refetchInterval: page === 1 ? 5000 : false, // Only auto-refresh latest logs
   });
-  if (isLoading) return <div className="text-zinc-500 animate-pulse">Loading logs...</div>;
-  if (error) return <div className="text-destructive font-bold">Error connecting to log stream.</div>;
-  if (!data) return <div className="text-zinc-700 italic">No logs generated.</div>;
-  return <pre className="whitespace-pre-wrap font-mono text-emerald-500 overflow-x-hidden">{data}</pre>;
+
+  const handleExport = async () => {
+    try {
+      const response = await apiClient.get(`/containers/${containerId}/logs/export`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `container_${containerId}_logs.txt`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      toast.error('Failed to export logs');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-muted/30 p-3 rounded-xl border border-border/50">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => p + 1)}
+            className="h-8 text-[11px] font-bold uppercase"
+          >
+            <ChevronLeft className="mr-1 h-3 w-3" /> Older
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="h-8 text-[11px] font-bold uppercase"
+          >
+            Newer <ChevronRight className="ml-1 h-3 w-3" />
+          </Button>
+          <Badge variant="outline" className="h-8 font-mono text-[10px]">
+            Page {page}
+          </Badge>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Select
+            value={limit.toString()}
+            onValueChange={(val) => { setLimit(parseInt(val)); setPage(1); }}
+          >
+            <SelectTrigger className="h-8 w-24 text-[11px] font-bold">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[100, 200, 500, 1000].map(l => (
+                <SelectItem key={l} value={l.toString()} className="text-[11px]">{l} Lines</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleExport}
+            className="h-8 text-[11px] font-bold"
+          >
+            <Download className="mr-1 h-3.5 w-3.5" /> Export
+          </Button>
+        </div>
+      </div>
+
+      <ScrollArea className="h-[450px] w-full rounded-2xl bg-zinc-950 p-4 border border-border/50 shadow-inner group relative">
+        {(isLoading || isPlaceholderData) && (
+          <div className="absolute top-2 right-2 z-10">
+            <Loader2 className="h-4 w-4 animate-spin text-emerald-500 opacity-50" />
+          </div>
+        )}
+        {isLoading && !data ? (
+          <div className="text-zinc-500 animate-pulse font-mono text-xs">Connecting to log stream...</div>
+        ) : !data ? (
+          <div className="text-zinc-700 italic font-mono text-xs">No logs found in this window.</div>
+        ) : (
+          <pre className="whitespace-pre-wrap font-mono text-emerald-500/90 text-xs leading-relaxed selection:bg-emerald-500/20">
+            {data}
+          </pre>
+        )}
+      </ScrollArea>
+      
+      <p className="text-[10px] text-muted-foreground text-center italic">
+        {page === 1 ? "Showing latest logs. Auto-refreshing every 5s." : "Viewing historical logs. Auto-refresh paused."}
+      </p>
+    </div>
+  );
 }
 
 function ContainerUsageBars({ container }: { container: any }) {

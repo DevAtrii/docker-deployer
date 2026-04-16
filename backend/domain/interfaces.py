@@ -58,7 +58,7 @@ class DockerRepository(ABC):
         pass
         
     @abstractmethod
-    def get_logs(self, user_id: str, container_id: str) -> str:
+    def get_logs(self, user_id: str, container_id: str, limit: int = 100, page: int = 1) -> str:
         pass
         
     @abstractmethod
