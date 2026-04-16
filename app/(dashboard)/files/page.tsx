@@ -45,7 +45,9 @@ export default function FilesPage() {
   const [dirModal, setDirModal] = useState(false);
   const [newDirName, setNewDirName] = useState('');
 
-  const [editorModal, setEditorModal] = useState<{isOpen: boolean, file: string, content: string}>({isOpen: false, file: '', content: ''});
+  const [newFileModal, setNewFileModal] = useState({ isOpen: false, name: '' });
+
+  const [editorModal, setEditorModal] = useState<{ isOpen: boolean, file: string, content: string }>({ isOpen: false, file: '', content: '' });
 
   const pathParts = currentPath.split('/').filter(Boolean);
 
@@ -87,6 +89,14 @@ export default function FilesPage() {
     }
   };
 
+  const handleCreateFileInit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFileModal.name) return;
+    const fullPath = currentPath ? `${currentPath}/${newFileModal.name}` : newFileModal.name;
+    setNewFileModal({ isOpen: false, name: '' });
+    setEditorModal({ isOpen: true, file: fullPath, content: '' });
+  };
+
   const handleSaveFile = async () => {
     try {
       await actions.write.mutateAsync({ path: editorModal.file, content: editorModal.content });
@@ -115,7 +125,7 @@ export default function FilesPage() {
           <p className="text-muted-foreground">Manage persistent volumes and configuration files.</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <Button variant="outline" size="sm" onClick={() => setEditorModal({isOpen: true, file: currentPath ? `${currentPath}/new_file.txt` : 'new_file.txt', content: ''})} className="flex-1 md:flex-none">
+          <Button variant="outline" size="sm" onClick={() => setNewFileModal({ isOpen: true, name: '' })} className="flex-1 md:flex-none">
             <Plus className="mr-2 h-4 w-4" /> New File
           </Button>
           <Button size="sm" onClick={() => setDirModal(true)} className="flex-1 md:flex-none">
@@ -236,11 +246,42 @@ export default function FilesPage() {
               <Input autoFocus value={newDirName} onChange={e => setNewDirName(e.target.value)} placeholder="Enter folder name..." className="h-11 shadow-inner bg-muted/50" />
             </div>
             <DialogFooter>
-               <Button type="button" variant="outline" onClick={() => setDirModal(false)}>Cancel</Button>
-               <Button type="submit" disabled={actions.createDir.isPending}>
-                 {actions.createDir.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Folder className="mr-2 h-4 w-4" />}
-                 Create Directory
-               </Button>
+              <Button type="button" variant="outline" onClick={() => setDirModal(false)}>Cancel</Button>
+              <Button type="submit" disabled={actions.createDir.isPending}>
+                {actions.createDir.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Folder className="mr-2 h-4 w-4" />}
+                Create Directory
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* New File Name Dialog */}
+      <Dialog open={newFileModal.isOpen} onOpenChange={(val) => setNewFileModal({ ...newFileModal, isOpen: val })}>
+        <DialogContent className="sm:max-w-[400px] border-border/50 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New File</DialogTitle>
+            <DialogDescription>Specify a name for the new file in this directory.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreateFileInit}>
+            <div className="py-6 pt-2">
+              <Input
+                autoFocus
+                value={newFileModal.name}
+                onChange={e => setNewFileModal({ ...newFileModal, name: e.target.value })}
+                placeholder="filename.txt"
+                className="h-11 shadow-inner bg-muted/50 font-mono text-sm"
+              />
+              <p className="mt-2 text-[10px] text-muted-foreground truncate">
+                Path: <span className="text-primary">{currentPath || 'root'}/{newFileModal.name || '...'}</span>
+              </p>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setNewFileModal({ isOpen: false, name: '' })}>Cancel</Button>
+              <Button type="submit">
+                <FileText className="mr-2 h-4 w-4" />
+                Initialize File
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
