@@ -111,13 +111,13 @@ export default function ImagesPage() {
 
   const addTokenMutation = useMutation({
     mutationFn: async () => {
-      const payload = { 
-        alias: newAlias, 
+      const payload = {
+        alias: newAlias,
         username: newUsername,
         registry: newRegistry,
-        token: newToken || undefined 
+        token: newToken || undefined
       };
-      
+
       if (editingAlias) {
         return apiClient.put(`/images/tokens/${encodeURIComponent(editingAlias)}`, payload);
       } else {
@@ -140,12 +140,12 @@ export default function ImagesPage() {
     setEditingAlias(null);
   };
 
-  const handleEditToken = (token: { alias: string, username?: string, registry?: string }) => {
+  const handleEditToken = (token: { alias: string, username?: string, registry?: string, token?: string }) => {
     setEditingAlias(token.alias);
     setNewAlias(token.alias);
     setNewUsername(token.username || '');
     setNewRegistry(token.registry || 'https://index.docker.io/v1/');
-    setNewToken(token.token || ''); 
+    setNewToken(token.token || '');
   };
 
   const testTokenMutation = useMutation({
@@ -278,7 +278,7 @@ export default function ImagesPage() {
                       required
                       value={imageName}
                       onChange={e => setImageName(e.target.value)}
-                      placeholder="e.g. nginx:stable or myorg/api:v1"
+                      placeholder="e.g. nginx:alpine username/image:tag"
                       className="h-11 shadow-inner bg-muted/50"
                     />
                   </div>
@@ -368,11 +368,11 @@ export default function ImagesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="alias" className="text-xs">Nickname</Label>
-                  <Input 
-                    id="alias" 
-                    value={newAlias} 
-                    onChange={e => setNewAlias(e.target.value)} 
-                    placeholder="org-token" 
+                  <Input
+                    id="alias"
+                    value={newAlias}
+                    onChange={e => setNewAlias(e.target.value)}
+                    placeholder="org-token"
                     className="h-9 shadow-inner"
                     disabled={!!editingAlias} // Can't rename alias yet (backend uses it as PK)
                   />
@@ -388,13 +388,13 @@ export default function ImagesPage() {
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="tok" className="text-xs">Access Token {editingAlias && <span className="text-[10px] font-normal opacity-50">(Leave empty to keep current)</span>}</Label>
                   <div className="relative">
-                    <Input 
-                      id="tok" 
-                      type={showFormToken ? "text" : "password"} 
-                      value={newToken} 
-                      onChange={e => setNewToken(e.target.value)} 
-                      placeholder="dckr_pat_•••••" 
-                      className="h-9 shadow-inner pr-10" 
+                    <Input
+                      id="tok"
+                      type={showFormToken ? "text" : "password"}
+                      value={newToken}
+                      onChange={e => setNewToken(e.target.value)}
+                      placeholder="dckr_pat_•••••"
+                      className="h-9 shadow-inner pr-10"
                     />
                     <Button
                       type="button"
@@ -488,15 +488,15 @@ export default function ImagesPage() {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Token Secret Display */}
                         <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl bg-muted/30 border border-border/30">
                           <code className="text-[10px] font-mono truncate opacity-60">
                             {visibleTokens.has(token.alias) ? token.token : '••••••••••••••••••••••••'}
                           </code>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-6 w-6 text-muted-foreground hover:text-primary"
                             onClick={() => toggleTokenVisibility(token.alias)}
                           >

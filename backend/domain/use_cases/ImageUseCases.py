@@ -26,6 +26,12 @@ class ImageUseCases:
         if not user:
             raise Exception("User not found")
             
+        # If token is provided and image has no namespace, prepend username
+        if token_alias and "/" not in image_name:
+            token_entry = next((t for t in user.docker_tokens if t['alias'] == token_alias), None)
+            if token_entry and token_entry.get('username'):
+                image_name = f"{token_entry['username']}/{image_name}"
+
         task_id = str(uuid.uuid4())
         self.active_pulls[task_id] = {'status': 'pulling', 'logs': [], 'image_name': image_name}
         
