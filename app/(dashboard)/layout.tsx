@@ -64,7 +64,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SidebarInset className="flex w-full flex-col overflow-hidden">
           {/* Impersonation Banner */}
           {impersonating && (
-            <Alert variant="warning" className="rounded-none border-t-0 border-x-0 bg-yellow-500/10 border-yellow-500/20 py-2">
+            <Alert variant="default" className="rounded-none border-t-0 border-x-0 bg-yellow-500/10 border-yellow-500/20 py-2">
               <div className="flex w-full items-center justify-between">
                 <AlertDescription className="flex items-center gap-2 text-yellow-600 dark:text-yellow-400 font-medium text-sm">
                   <span className="bg-yellow-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">

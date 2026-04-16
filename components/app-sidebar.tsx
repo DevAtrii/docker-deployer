@@ -139,7 +139,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-semibold">{profile?.username}</span>
-                      <span className="truncate text-xs">{profile?.email || "No email"}</span>
+                      <span className="truncate text-xs text-muted-foreground lowercase">{user?.role} Account</span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
