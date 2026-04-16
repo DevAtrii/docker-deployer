@@ -182,7 +182,9 @@ export default function ContainersPage() {
                   </div>
                   <div className="min-w-0">
                     <CardTitle className="text-base font-bold truncate">{c.name}</CardTitle>
-                    <CardDescription className="font-mono text-[10px] uppercase tracking-tighter opacity-70 truncate">{c.image}</CardDescription>
+                    <CardDescription className="font-mono text-[10px] uppercase tracking-tighter opacity-70 line-clamp-2 leading-tight h-5">
+                      {c.image}
+                    </CardDescription>
                   </div>
                 </div>
                 <DropdownMenu>

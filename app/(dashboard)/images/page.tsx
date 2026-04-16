@@ -38,7 +38,7 @@ import { Progress } from '@/components/ui/progress';
 import {
   Box, DownloadCloud, KeyRound, Loader2, Plus, Trash2,
   Terminal, Database, HardDrive, ShieldCheck, Zap,
-  Eye, EyeOff, CheckCircle2, AlertCircle
+  Eye, EyeOff, CheckCircle2, AlertCircle, Pencil
 } from 'lucide-react';
 import { apiClient } from '@/src/data/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -60,6 +60,7 @@ export default function ImagesPage() {
   const [newRegistry, setNewRegistry] = useState('https://index.docker.io/v1/');
   const [newToken, setNewToken] = useState('');
   const [editingAlias, setEditingAlias] = useState<string | null>(null);
+  const [showFormToken, setShowFormToken] = useState(false);
   const [visibleTokens, setVisibleTokens] = useState<Set<string>>(new Set());
   const [testResults, setTestResults] = useState<Record<string, { success: boolean, message: string }>>({});
 
@@ -144,7 +145,7 @@ export default function ImagesPage() {
     setNewAlias(token.alias);
     setNewUsername(token.username || '');
     setNewRegistry(token.registry || 'https://index.docker.io/v1/');
-    setNewToken(''); // Don't populate secret token
+    setNewToken(token.token || ''); 
   };
 
   const testTokenMutation = useMutation({
@@ -386,7 +387,25 @@ export default function ImagesPage() {
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="tok" className="text-xs">Access Token {editingAlias && <span className="text-[10px] font-normal opacity-50">(Leave empty to keep current)</span>}</Label>
-                  <Input id="tok" type="password" value={newToken} onChange={e => setNewToken(e.target.value)} placeholder="dckr_pat_•••••" className="h-9 shadow-inner" />
+                  <div className="relative">
+                    <Input 
+                      id="tok" 
+                      type={showFormToken ? "text" : "password"} 
+                      value={newToken} 
+                      onChange={e => setNewToken(e.target.value)} 
+                      placeholder="dckr_pat_•••••" 
+                      className="h-9 shadow-inner pr-10" 
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-9 w-9 text-muted-foreground hover:bg-transparent"
+                      onClick={() => setShowFormToken(!showFormToken)}
+                    >
+                      {showFormToken ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </Button>
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -455,7 +474,7 @@ export default function ImagesPage() {
                                 className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5"
                                 title="Edit"
                               >
-                                <Terminal size={14} />
+                                <Pencil size={14} />
                               </Button>
                               <Button
                                 size="icon"
