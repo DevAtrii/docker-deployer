@@ -64,7 +64,13 @@ def get_image_routes(image_use_cases: ImageUseCases, auth_use_cases) -> Blueprin
     def add_token():
         data = request.json
         try:
-            image_use_cases.add_token(request.user_id, data['alias'], data['token'], data['username'])
+            image_use_cases.add_token(
+                request.user_id, 
+                data['alias'], 
+                data['token'], 
+                data['username'],
+                registry=data.get('registry')
+            )
             return jsonify({'message': 'Token saved.'}), 201
         except Exception as e:
             return jsonify({'message': str(e)}), 400

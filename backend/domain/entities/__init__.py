@@ -29,7 +29,7 @@ class User:
             "cpu_limit": self.cpu_limit,
             "ram_limit_mb": self.ram_limit_mb,
             "token_aliases": [t["alias"] for t in self.docker_tokens],
-            "tokens_detailed": [{"alias": t["alias"], "username": t.get("username")} for t in self.docker_tokens],
+            "tokens_detailed": [{"alias": t["alias"], "username": t.get("username"), "registry": t.get("registry")} for t in self.docker_tokens],
         }
 
 @dataclass

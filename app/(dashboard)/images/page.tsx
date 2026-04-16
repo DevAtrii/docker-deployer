@@ -56,6 +56,7 @@ export default function ImagesPage() {
   const [tokenOpen, setTokenOpen] = useState(false);
   const [newAlias, setNewAlias] = useState('');
   const [newUsername, setNewUsername] = useState('');
+  const [newRegistry, setNewRegistry] = useState('https://index.docker.io/v1/');
   const [newToken, setNewToken] = useState('');
 
   // Fetch stored token aliases
@@ -64,7 +65,7 @@ export default function ImagesPage() {
     queryFn: async () => (await apiClient.get('/images/tokens')).data,
   });
   const aliases: string[] = tokenData?.aliases ?? [];
-  const detailedTokens: { alias: string, username?: string }[] = tokenData?.tokens_detailed ?? [];
+  const detailedTokens: { alias: string, username?: string, registry?: string }[] = tokenData?.tokens_detailed ?? [];
 
   const [taskId, setTaskId] = useState<string | null>(null);
   const { data: pullStatus } = usePullStatus(taskId);
@@ -107,12 +108,14 @@ export default function ImagesPage() {
     mutationFn: async () => apiClient.post('/images/tokens', { 
       alias: newAlias, 
       username: newUsername,
+      registry: newRegistry,
       token: newToken 
     }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['token-aliases'] });
       setNewAlias('');
       setNewUsername('');
+      setNewRegistry('https://index.docker.io/v1/');
       setNewToken('');
       toast.success('Token saved successfully');
     },
@@ -323,6 +326,10 @@ export default function ImagesPage() {
                   <Input id="user" value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="rizwandevid" className="h-9 shadow-inner" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="reg" className="text-xs">Registry URL</Label>
+                  <Input id="reg" value={newRegistry} onChange={e => setNewRegistry(e.target.value)} placeholder="https://index.docker.io/v1/" className="h-9 shadow-inner" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="tok" className="text-xs">Access Token</Label>
                   <Input id="tok" type="password" value={newToken} onChange={e => setNewToken(e.target.value)} placeholder="dckr_pat_•••••" className="h-9 shadow-inner" />
                 </div>
@@ -353,10 +360,10 @@ export default function ImagesPage() {
                           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                             <KeyRound className="h-4 w-4 text-primary" />
                           </div>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-semibold">{token.alias}</span>
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
-                              User: {token.username || 'unknown'}
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-semibold truncate">{token.alias}</span>
+                            <span className="text-[10px] text-muted-foreground truncate opacity-70">
+                              {token.username} @ {token.registry?.replace('https://', '').replace(/\/v1\/?$/, '')}
                             </span>
                           </div>
                         </div>
