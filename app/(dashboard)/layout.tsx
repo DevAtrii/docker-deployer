@@ -1,4 +1,8 @@
 "use client";
+
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useUser } from "@/src/useCases/hooks";
 import {
   SidebarProvider,
   SidebarInset,
