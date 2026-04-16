@@ -33,8 +33,8 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { 
-  Play, Square, Pause, RotateCcw, Trash2, Terminal, Plus, Box, 
+import {
+  Play, Square, Pause, RotateCcw, Trash2, Terminal, Plus, Box,
   Loader2, RefreshCcw, MoreVertical, ExternalLink, Activity, HardDrive, Cpu
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -49,7 +49,7 @@ export default function ContainersPage() {
   const qc = useQueryClient();
 
   const [isDeployOpen, setIsDeployOpen] = useState(false);
-  const [deployForm, setDeployForm] = useState({ 
+  const [deployForm, setDeployForm] = useState({
     name: '', image: '', internalPort: '', hostPort: '',
     memLimit: '', memSwapLimit: '', cpuLimit: ''
   });
@@ -93,7 +93,7 @@ export default function ContainersPage() {
         cpu_limit: deployForm.cpuLimit ? parseFloat(deployForm.cpuLimit) : undefined,
       });
       setIsDeployOpen(false);
-      setDeployForm({ 
+      setDeployForm({
         name: '', image: '', internalPort: '', hostPort: '',
         memLimit: '', memSwapLimit: '', cpuLimit: ''
       });
@@ -105,12 +105,12 @@ export default function ContainersPage() {
   };
 
   const handleAction = async (id: string, action: any, containerName: string) => {
-     try {
-       await actionMutation.mutateAsync({ id, action });
-       toast.success(`${containerName}: ${action} command sent`);
-     } catch (err: any) {
-       toast.error(err.response?.data?.message || `Failed to ${action} container.`);
-     }
+    try {
+      await actionMutation.mutateAsync({ id, action });
+      toast.success(`${containerName}: ${action} command sent`);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || `Failed to ${action} container.`);
+    }
   }
 
   const handleRedeploy = async (containerId: string, containerName: string) => {
@@ -144,13 +144,13 @@ export default function ContainersPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {isLoading && Array.from({length: 3}).map((_, i) => (
-           <Card key={i} className="animate-pulse">
-             <CardHeader className="h-20 bg-muted/50 rounded-t-xl" />
-             <CardContent className="h-32" />
-           </Card>
+        {isLoading && Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader className="h-20 bg-muted/50 rounded-t-xl" />
+            <CardContent className="h-32" />
+          </Card>
         ))}
-        
+
         {!isLoading && containers?.length === 0 && (
           <div className="col-span-full py-20 text-center border-2 border-dashed rounded-3xl bg-muted/20">
             <Box size={48} className="mx-auto text-muted-foreground mb-4 opacity-20" />
@@ -199,7 +199,7 @@ export default function ContainersPage() {
                     <DropdownMenuItem onClick={() => setLogsModal({ isOpen: true, containerId: c.id })}>
                       <Terminal className="mr-2 h-4 w-4" /> View Logs
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="text-primary focus:text-primary focus:bg-primary/5"
                       onClick={() => handleRedeploy(c.id, c.name)}
                       disabled={redeployMutation.isPending}
@@ -207,9 +207,9 @@ export default function ContainersPage() {
                       <RefreshCcw className="mr-2 h-4 w-4" /> Force Redeploy
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="text-destructive focus:text-destructive focus:bg-destructive/5"
-                      onClick={() => { if(confirm('Permanently delete container?')) handleAction(c.id, 'delete', c.name) }}
+                      onClick={() => { if (confirm('Permanently delete container?')) handleAction(c.id, 'delete', c.name) }}
                     >
                       <Trash2 className="mr-2 h-4 w-4" /> Delete
                     </DropdownMenuItem>
@@ -228,40 +228,40 @@ export default function ContainersPage() {
                   </Badge>
                 )}
               </div>
-              
+
               <div className="space-y-1 mb-6">
-                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Public Access</p>
-                 <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground bg-muted/50 p-2 rounded-lg border border-border/50">
-                    <ExternalLink className="h-3 w-3" />
-                    <span className="truncate">
-                      {Object.keys(c.ports).length > 0 
-                        ? `${window.location.hostname}:${Object.values(c.ports)[0]}`
-                        : "No public ports"}
-                    </span>
-                 </div>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Public Access</p>
+                <div className="flex items-center gap-2 text-sm font-mono text-muted-foreground bg-muted/50 p-2 rounded-lg border border-border/50">
+                  <ExternalLink className="h-3 w-3" />
+                  <span className="truncate">
+                    {Object.keys(c.ports).length > 0
+                      ? `${window.location.hostname}:${Object.values(c.ports)[0]}`
+                      : "No public ports"}
+                  </span>
+                </div>
               </div>
 
               <ContainerUsageBars container={c} />
             </CardContent>
             {actionMutation.isPending && actionMutation.variables?.id === c.id && (
-               <CardFooter className="py-2 bg-primary/5 border-t border-primary/10 flex items-center justify-center gap-2 text-[10px] font-bold text-primary uppercase animate-pulse">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Updating Instance State...
-               </CardFooter>
+              <CardFooter className="py-2 bg-primary/5 border-t border-primary/10 flex items-center justify-center gap-2 text-[10px] font-bold text-primary uppercase animate-pulse">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Updating Instance State...
+              </CardFooter>
             )}
           </Card>
         ))}
       </div>
 
       {/* Deploy Dialog */}
-      <Dialog open={isDeployOpen} onOpenChange={(val) => { if(!val) { setIsDeployOpen(false); setVolumes([]); } }}>
+      <Dialog open={isDeployOpen} onOpenChange={(val) => { if (!val) { setIsDeployOpen(false); setVolumes([]); } }}>
         <DialogContent className="sm:max-w-[600px] border-border/50">
           <form onSubmit={handleDeploy}>
             <DialogHeader>
               <DialogTitle>Deploy Instance</DialogTitle>
               <DialogDescription>Configure your container settings and resource limits.</DialogDescription>
             </DialogHeader>
-            
+
             <div className="grid gap-6 py-6 scroll-area max-h-[70vh] overflow-y-auto px-1 no-scrollbar">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -270,9 +270,9 @@ export default function ContainersPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="image">Docker Image</Label>
-                  <Select 
-                    required 
-                    value={deployForm.image} 
+                  <Select
+                    required
+                    value={deployForm.image}
                     onValueChange={(val) => setDeployForm({ ...deployForm, image: val })}
                   >
                     <SelectTrigger className="w-full">
@@ -351,7 +351,7 @@ export default function ContainersPage() {
       </Dialog>
 
       {/* Logs Dialog */}
-      <Dialog open={logsModal.isOpen} onOpenChange={(val) => { if(!val) setLogsModal({ isOpen: false, containerId: null }) }}>
+      <Dialog open={logsModal.isOpen} onOpenChange={(val) => { if (!val) setLogsModal({ isOpen: false, containerId: null }) }}>
         <DialogContent className="sm:max-w-[800px] p-0 border-border/50">
           <DialogHeader className="p-6 pb-2">
             <DialogTitle>Instance Logs</DialogTitle>
@@ -366,39 +366,39 @@ export default function ContainersPage() {
       </Dialog>
 
       {/* Redeploy Progress Dialog */}
-      <Dialog open={!!redeployTaskId} onOpenChange={(val) => { if(!val && redeployStatus?.status !== 'running') setRedeployTaskId(null) }}>
+      <Dialog open={!!redeployTaskId} onOpenChange={(val) => { if (!val && redeployStatus?.status !== 'running') setRedeployTaskId(null) }}>
         <DialogContent className="sm:max-w-[600px] border-border/50">
           <DialogHeader>
             <DialogTitle>Redeployment Pipeline</DialogTitle>
             <DialogDescription>Container is being updated to the latest available image.</DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-             <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-bold flex items-center gap-2">
-                    {redeployStatus?.phase || 'Initializing...'}
-                  </span>
-                  {redeployStatus?.status === 'running' && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
-                </div>
-                <Progress value={redeployStatus?.status === 'completed' ? 100 : 45} className="h-1.5" />
-             </div>
 
-             <ScrollArea className="h-[300px] w-full rounded-xl bg-zinc-950 p-4 border border-border/50 font-mono text-xs text-zinc-400">
-                <div className="flex flex-col gap-1">
-                  {redeployStatus?.logs?.map((l: string, i: number) => (
-                    <div key={i} className="leading-tight">{l}</div>
-                  ))}
-                  {redeployStatus?.logs?.length === 0 && <div className="animate-pulse">Waiting for process logs...</div>}
-                </div>
-             </ScrollArea>
+          <div className="space-y-6 py-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-bold flex items-center gap-2">
+                  {redeployStatus?.phase || 'Initializing...'}
+                </span>
+                {redeployStatus?.status === 'running' && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+              </div>
+              <Progress value={redeployStatus?.status === 'completed' ? 100 : 45} className="h-1.5" />
+            </div>
+
+            <ScrollArea className="h-[300px] w-full rounded-xl bg-zinc-950 p-4 border border-border/50 font-mono text-xs text-zinc-400">
+              <div className="flex flex-col gap-1">
+                {redeployStatus?.logs?.map((l: string, i: number) => (
+                  <div key={i} className="leading-tight">{l}</div>
+                ))}
+                {redeployStatus?.logs?.length === 0 && <div className="animate-pulse">Waiting for process logs...</div>}
+              </div>
+            </ScrollArea>
           </div>
 
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="w-full"
-              disabled={redeployStatus?.status === 'running'} 
+              disabled={redeployStatus?.status === 'running'}
               onClick={() => setRedeployTaskId(null)}
             >
               {redeployStatus?.status === 'running' ? 'Process in background...' : 'Close Pipeline'}
@@ -425,7 +425,7 @@ function LogsViewer({ containerId }: { containerId: string | null }) {
 
 function ContainerUsageBars({ container }: { container: any }) {
   const { data: stats } = useContainerStats(container.id, container.status === 'running');
-  
+
   if (container.status !== 'running' || !stats) return null;
 
   const cpuDelta = stats.cpu_stats.cpu_usage.total_usage - stats.precpu_stats.cpu_usage.total_usage;
@@ -456,4 +456,4 @@ function ContainerUsageBars({ container }: { container: any }) {
     </div>
   );
 }
-}
+
