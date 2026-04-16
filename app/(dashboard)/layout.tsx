@@ -1,7 +1,8 @@
-import { 
-  SidebarProvider, 
-  SidebarInset, 
-  SidebarTrigger, 
+"use client";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -14,7 +15,7 @@ function useImpersonationState() {
   useEffect(() => {
     const raw = typeof window !== 'undefined' ? localStorage.getItem('impersonating_user') : null;
     if (raw) {
-      try { setImpersonating(JSON.parse(raw)); } catch {}
+      try { setImpersonating(JSON.parse(raw)); } catch { }
     }
   }, []);
 
@@ -60,10 +61,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </span>
                   Viewing as <strong className="font-bold underline decoration-yellow-500/30">{impersonating.username}</strong>
                 </AlertDescription>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                   onClick={() => exitImpersonation(router)}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exitImpersonation(router)}
                   className="h-8 border-yellow-500/20 hover:bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 bg-transparent"
                 >
                   <UserX className="mr-2 h-4 w-4" />
@@ -82,9 +83,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {pathname.split('/').pop() || 'Dashboard'}
               </h1>
             </div>
-            
+
             <div className="flex items-center gap-2">
-               {/* Search or other top-bar items could go here */}
+              {/* Search or other top-bar items could go here */}
             </div>
           </header>
 
