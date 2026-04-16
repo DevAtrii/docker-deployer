@@ -6,7 +6,7 @@ export default function Loading() {
       <div className="flex flex-col items-center gap-4">
         <IOSSpinner className="h-12 w-12" />
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground animate-pulse">
-          Synchronizing Workspace
+          Loading...
         </p>
       </div>
     </div>

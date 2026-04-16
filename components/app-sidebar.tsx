@@ -46,7 +46,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: user } = useUser();
   const { data: profile } = useProfile();
   const { setTheme } = useTheme();
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -94,7 +94,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 isActive={pathname.startsWith(item.url)}
                 tooltip={item.title}
               >
-                <Link href={item.url}>
+                <Link href={item.url} onClick={() => isMobile && setOpenMobile(false)}>
                   <item.icon />
                   <span>{item.title}</span>
                 </Link>
