@@ -75,6 +75,22 @@ def get_image_routes(image_use_cases: ImageUseCases, auth_use_cases) -> Blueprin
         except Exception as e:
             return jsonify({'message': str(e)}), 400
 
+    @bp.route('/tokens/<alias>', methods=['PUT'])
+    @token_required(auth_use_cases)
+    def update_token(alias: str):
+        data = request.json
+        try:
+            image_use_cases.update_token(
+                request.user_id,
+                alias,
+                data['username'],
+                registry=data.get('registry'),
+                token=data.get('token')
+            )
+            return jsonify({'message': 'Token updated.'}), 200
+        except Exception as e:
+            return jsonify({'message': str(e)}), 400
+
     @bp.route('/tokens/<alias>', methods=['DELETE'])
     @token_required(auth_use_cases)
     def delete_token(alias: str):

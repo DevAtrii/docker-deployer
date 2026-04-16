@@ -58,6 +58,7 @@ export default function ImagesPage() {
   const [newUsername, setNewUsername] = useState('');
   const [newRegistry, setNewRegistry] = useState('https://index.docker.io/v1/');
   const [newToken, setNewToken] = useState('');
+  const [editingAlias, setEditingAlias] = useState<string | null>(null);
 
   // Fetch stored token aliases
   const { data: tokenData } = useQuery({
@@ -105,22 +106,43 @@ export default function ImagesPage() {
   };
 
   const addTokenMutation = useMutation({
-    mutationFn: async () => apiClient.post('/images/tokens', { 
-      alias: newAlias, 
-      username: newUsername,
-      registry: newRegistry,
-      token: newToken 
-    }),
+    mutationFn: async () => {
+      const payload = { 
+        alias: newAlias, 
+        username: newUsername,
+        registry: newRegistry,
+        token: newToken || undefined 
+      };
+      
+      if (editingAlias) {
+        return apiClient.put(`/images/tokens/${encodeURIComponent(editingAlias)}`, payload);
+      } else {
+        return apiClient.post('/images/tokens', payload);
+      }
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['token-aliases'] });
-      setNewAlias('');
-      setNewUsername('');
-      setNewRegistry('https://index.docker.io/v1/');
-      setNewToken('');
-      toast.success('Token saved successfully');
+      resetTokenForm();
+      toast.success(editingAlias ? 'Token updated successfully' : 'Token saved successfully');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to save token.'),
   });
+
+  const resetTokenForm = () => {
+    setNewAlias('');
+    setNewUsername('');
+    setNewRegistry('https://index.docker.io/v1/');
+    setNewToken('');
+    setEditingAlias(null);
+  };
+
+  const handleEditToken = (token: { alias: string, username?: string, registry?: string }) => {
+    setEditingAlias(token.alias);
+    setNewAlias(token.alias);
+    setNewUsername(token.username || '');
+    setNewRegistry(token.registry || 'https://index.docker.io/v1/');
+    setNewToken(''); // Don't populate secret token
+  };
 
   const deleteTokenMutation = useMutation({
     mutationFn: async (alias: string) => apiClient.delete(`/images/tokens/${encodeURIComponent(alias)}`),
@@ -315,33 +337,49 @@ export default function ImagesPage() {
           <div className="space-y-8 py-4">
             {/* Add token form */}
             <div className="bg-muted/30 p-4 rounded-2xl border border-border/50 space-y-4">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Add Registry Token</h4>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {editingAlias ? `Editing: ${editingAlias}` : 'Add Registry Token'}
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="alias" className="text-xs">Nickname</Label>
-                  <Input id="alias" value={newAlias} onChange={e => setNewAlias(e.target.value)} placeholder="org-token" className="h-9 shadow-inner" />
+                  <Input 
+                    id="alias" 
+                    value={newAlias} 
+                    onChange={e => setNewAlias(e.target.value)} 
+                    placeholder="org-token" 
+                    className="h-9 shadow-inner"
+                    disabled={!!editingAlias} // Can't rename alias yet (backend uses it as PK)
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="user" className="text-xs">Docker Username</Label>
-                  <Input id="user" value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="rizwandevid" className="h-9 shadow-inner" />
+                  <Input id="user" value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="docker-username" className="h-9 shadow-inner" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="reg" className="text-xs">Registry URL</Label>
                   <Input id="reg" value={newRegistry} onChange={e => setNewRegistry(e.target.value)} placeholder="https://index.docker.io/v1/" className="h-9 shadow-inner" />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="tok" className="text-xs">Access Token</Label>
+                  <Label htmlFor="tok" className="text-xs">Access Token {editingAlias && <span className="text-[10px] font-normal opacity-50">(Leave empty to keep current)</span>}</Label>
                   <Input id="tok" type="password" value={newToken} onChange={e => setNewToken(e.target.value)} placeholder="dckr_pat_•••••" className="h-9 shadow-inner" />
                 </div>
               </div>
-              <Button
-                onClick={() => addTokenMutation.mutate()}
-                disabled={!newAlias || !newUsername || !newToken || addTokenMutation.isPending}
-                className="w-full h-9"
-              >
-                {addTokenMutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Zap className="mr-2 h-4 w-4" />}
-                Save Credentials
-              </Button>
+              <div className="flex gap-2">
+                {editingAlias && (
+                  <Button variant="outline" onClick={resetTokenForm} className="flex-1 h-9">
+                    Cancel Edit
+                  </Button>
+                )}
+                <Button
+                  onClick={() => addTokenMutation.mutate()}
+                  disabled={!newAlias || !newUsername || (!editingAlias && !newToken) || addTokenMutation.isPending}
+                  className="flex-[2] h-9"
+                >
+                  {addTokenMutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Zap className="mr-2 h-4 w-4" />}
+                  {editingAlias ? 'Update Credentials' : 'Save Credentials'}
+                </Button>
+              </div>
             </div>
 
             {/* List */}
@@ -361,20 +399,30 @@ export default function ImagesPage() {
                             <KeyRound className="h-4 w-4 text-primary" />
                           </div>
                           <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-semibold truncate">{token.alias}</span>
+                            <span className="text-sm font-semibold truncate text-primary/90">{token.alias}</span>
                             <span className="text-[10px] text-muted-foreground truncate opacity-70">
                               {token.username} @ {token.registry?.replace('https://', '').replace(/\/v1\/?$/, '')}
                             </span>
                           </div>
                         </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => setTokenToDelete(token.alias)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 size={15} />
-                        </Button>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleEditToken(token)}
+                            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5"
+                          >
+                            <Terminal size={14} />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setTokenToDelete(token.alias)}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5"
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>

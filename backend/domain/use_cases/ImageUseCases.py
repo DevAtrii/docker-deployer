@@ -83,6 +83,24 @@ class ImageUseCases:
         })
         self.user_repo.save(user)
 
+    def update_token(self, user_id: str, alias: str, username: str, registry: Optional[str] = None, token: Optional[str] = None) -> None:
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            raise Exception("User not found")
+        
+        # Find existing token
+        entry = next((t for t in user.docker_tokens if t['alias'] == alias), None)
+        if not entry:
+            raise Exception(f"Token alias '{alias}' not found.")
+        
+        # Update fields
+        entry['username'] = username
+        entry['registry'] = registry if registry else 'https://index.docker.io/v1/'
+        if token:
+            entry['token'] = token
+            
+        self.user_repo.save(user)
+
     def delete_token(self, user_id: str, alias: str) -> None:
         user = self.user_repo.get_by_id(user_id)
         if not user:
