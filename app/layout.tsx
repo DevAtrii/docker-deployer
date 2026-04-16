@@ -1,8 +1,12 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Oxanium } from 'next/font/google';
 import './globals.css';
 import Providers from './providers';
+import { cn } from "@/lib/utils";
 
+import { Toaster } from "@/components/ui/sonner";
+
+const oxanium = Oxanium({ subsets: ['latin'], variable: '--font-sans' });
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -16,10 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning className={oxanium.variable}>
       <body className={inter.className}>
         <Providers>
           {children}
+          <Toaster position="top-right" richColors closeButton />
         </Providers>
       </body>
     </html>
