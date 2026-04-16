@@ -12,6 +12,11 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Docker Deployer',
   description: 'Manage your docker containers with ease.',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
+  manifest: '/site.webmanifest',
 };
 
 export default function RootLayout({
