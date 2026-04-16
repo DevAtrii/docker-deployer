@@ -102,7 +102,9 @@ def get_image_routes(image_use_cases: ImageUseCases, auth_use_cases) -> Blueprin
             image_use_cases.test_token_login(request.user_id, alias)
             return jsonify({'message': 'Login successful!'}), 200
         except Exception as e:
-            return jsonify({'message': str(e)}), 401
+            # Important: return 400 instead of 401 to avoid conflicting with 
+            # the app's global auth middleware which redirects to logout on 401.
+            return jsonify({'message': str(e)}), 400
 
     @bp.route('/tokens/<alias>', methods=['DELETE'])
     @token_required(auth_use_cases)
