@@ -117,6 +117,7 @@ export default function AdminPage() {
       localStorage.setItem('admin_token', currentToken);
       localStorage.setItem('impersonating_user', JSON.stringify({ username: user.username, id: user.id }));
       localStorage.setItem('token', data.token);
+      qc.clear(); // Clear cache before switching to user context
       toast.success(`Switching to ${user.username}...`);
       router.push('/dashboard');
       router.refresh();

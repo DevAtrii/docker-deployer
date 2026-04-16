@@ -35,8 +35,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { 
-  Box, DownloadCloud, KeyRound, Loader2, Plus, Trash2, 
+import {
+  Box, DownloadCloud, KeyRound, Loader2, Plus, Trash2,
   Terminal, Database, HardDrive, ShieldCheck, Zap
 } from 'lucide-react';
 import { apiClient } from '@/src/data/api';
@@ -84,15 +84,15 @@ export default function ImagesPage() {
       }, 2000);
       return () => clearTimeout(timer);
     } else if (pullStatus?.status === 'error') {
-       toast.error('Image pull failed');
+      toast.error('Image pull failed');
     }
   }, [pullStatus, qc]);
 
   const handlePullStart = async () => {
     try {
-      const res = await pullMutation.mutateAsync({ 
-        image_name: imageName, 
-        token_alias: selectedAlias === 'none' ? null : selectedAlias 
+      const res = await pullMutation.mutateAsync({
+        image_name: imageName,
+        token_alias: selectedAlias === 'none' ? null : selectedAlias
       });
       setTaskId(res.task_id);
       toast.info('Pulling image in background...');
@@ -122,11 +122,11 @@ export default function ImagesPage() {
 
   const handleRemoveImage = async (name: string) => {
     try {
-       await apiClient.delete(`/images/?image_name=${encodeURIComponent(name)}`);
-       qc.invalidateQueries({ queryKey: ['images'] });
-       toast.success(`Image ${name} untracked`);
+      await apiClient.delete(`/images/?image_name=${encodeURIComponent(name)}`);
+      qc.invalidateQueries({ queryKey: ['images'] });
+      toast.success(`Image ${name} untracked`);
     } catch (err: any) {
-       toast.error('Failed to untrack image');
+      toast.error('Failed to untrack image');
     }
   };
 
@@ -149,11 +149,11 @@ export default function ImagesPage() {
 
       {/* Images Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {isLoading && Array.from({length: 3}).map((_, i) => (
-           <Card key={i} className="animate-pulse">
-             <CardHeader className="h-16 bg-muted/50 rounded-t-xl" />
-             <CardContent className="h-24" />
-           </Card>
+        {isLoading && Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader className="h-16 bg-muted/50 rounded-t-xl" />
+            <CardContent className="h-24" />
+          </Card>
         ))}
 
         {!isLoading && images?.length === 0 && (
@@ -182,34 +182,34 @@ export default function ImagesPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
-                 <HardDrive className="h-3 w-3" />
-                 <span>Layered Storage Engine</span>
-               </div>
-               <div className="flex justify-end">
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8" 
-                    onClick={() => setImageToDelete({ name: img.tags[0] || 'untagged', id: img.id })}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" /> Untrack
-                  </Button>
-               </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
+                <HardDrive className="h-3 w-3" />
+                <span>Layered Storage Engine</span>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8"
+                  onClick={() => setImageToDelete({ name: img.tags[0] || 'untagged', id: img.id })}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Untrack
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Pull Image Dialog */}
-      <Dialog open={pullOpen} onOpenChange={(val) => { if(!val && pullStatus?.status !== 'pulling') { setPullOpen(false); setTaskId(null); } }}>
+      <Dialog open={pullOpen} onOpenChange={(val) => { if (!val && pullStatus?.status !== 'pulling') { setPullOpen(false); setTaskId(null); } }}>
         <DialogContent className="sm:max-w-[600px] border-border/50 p-0 overflow-hidden">
           <div className="p-6">
             <DialogHeader>
               <DialogTitle>Pull Registry Image</DialogTitle>
               <DialogDescription>Import images from Docker Hub or a private registry.</DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-6 py-6 font-medium">
               {!taskId ? (
                 <>
@@ -227,8 +227,8 @@ export default function ImagesPage() {
                   </div>
                   <div className="space-y-3">
                     <Label htmlFor="token">Authentication Token <span className="text-muted-foreground font-normal">(Optional)</span></Label>
-                    <Select 
-                      value={selectedAlias} 
+                    <Select
+                      value={selectedAlias}
                       onValueChange={(val) => setSelectedAlias(val)}
                     >
                       <SelectTrigger id="token" className="h-11 shadow-inner bg-muted/50">
@@ -248,7 +248,7 @@ export default function ImagesPage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-bold flex items-center gap-2">
-                         {pullStatus?.status || 'Waiting...'}
+                        {pullStatus?.status || 'Waiting...'}
                       </span>
                       {pullStatus?.status === 'pulling' && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
                     </div>
@@ -278,10 +278,10 @@ export default function ImagesPage() {
                 </Button>
               </>
             ) : (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full"
-                disabled={pullStatus?.status === 'pulling'} 
+                disabled={pullStatus?.status === 'pulling'}
                 onClick={() => setTaskId(null)}
               >
                 {pullStatus?.status === 'pulling' ? 'Pulling in background...' : 'Close Window'}
@@ -292,12 +292,12 @@ export default function ImagesPage() {
       </Dialog>
 
       {/* Auth Token Dialog */}
-      <Dialog open={tokenOpen} onOpenChange={(val) => { if(!val) setTokenOpen(false) }}>
+      <Dialog open={tokenOpen} onOpenChange={(val) => { if (!val) setTokenOpen(false) }}>
         <DialogContent className="sm:max-w-[500px] border-border/50">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-               <ShieldCheck className="h-5 w-5 text-primary" />
-               Registry Authentication
+              <ShieldCheck className="h-5 w-5 text-primary" />
+              Registry Authentication
             </DialogTitle>
             <DialogDescription>Manage tokens for private Docker registries.</DialogDescription>
           </DialogHeader>
@@ -316,9 +316,9 @@ export default function ImagesPage() {
                   <Input id="tok" type="password" value={newToken} onChange={e => setNewToken(e.target.value)} placeholder="dckr_pat_•••••" className="h-9 shadow-inner" />
                 </div>
               </div>
-              <Button 
-                onClick={() => addTokenMutation.mutate()} 
-                disabled={!newAlias || !newToken || addTokenMutation.isPending} 
+              <Button
+                onClick={() => addTokenMutation.mutate()}
+                disabled={!newAlias || !newToken || addTokenMutation.isPending}
                 className="w-full h-9"
               >
                 {addTokenMutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Zap className="mr-2 h-4 w-4" />}
@@ -340,7 +340,7 @@ export default function ImagesPage() {
                       <div key={alias} className="flex items-center justify-between px-4 py-3 rounded-xl bg-card border border-border/50 shadow-sm group">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                             <KeyRound className="h-4 w-4 text-primary" />
+                            <KeyRound className="h-4 w-4 text-primary" />
                           </div>
                           <span className="text-sm font-semibold">{alias}</span>
                         </div>
@@ -368,18 +368,19 @@ export default function ImagesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will untrack <strong>{imageToDelete?.name}</strong> from the deployer. 
+              This will untrack <strong>{imageToDelete?.name}</strong> from the deployer.
               The actual image will remain on the host but won't be visible here.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogCancel className='cursor-pointer'>Cancel</AlertDialogCancel>
+            <AlertDialogAction
               onClick={() => {
                 if (imageToDelete) handleRemoveImage(imageToDelete.id);
                 setImageToDelete(null);
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              variant="destructive"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/10 cursor-pointer"
             >
               Untrack Image
             </AlertDialogAction>
@@ -392,13 +393,13 @@ export default function ImagesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete authentication token?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the token alias <strong>{tokenToDelete}</strong>? 
+              Are you sure you want to delete the token alias <strong>{tokenToDelete}</strong>?
               You will need to re-add it if you want to pull images from this registry later.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={() => {
                 if (tokenToDelete) deleteTokenMutation.mutate(tokenToDelete);
                 setTokenToDelete(null);

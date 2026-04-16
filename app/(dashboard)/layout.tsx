@@ -12,16 +12,21 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { UserX, LayoutDashboard } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 function useImpersonationState() {
   const [impersonating, setImpersonating] = useState<{ username: string } | null>(null);
+  const pathname = usePathname();
+  const qc = useQueryClient();
 
   useEffect(() => {
     const raw = typeof window !== 'undefined' ? localStorage.getItem('impersonating_user') : null;
     if (raw) {
-      try { setImpersonating(JSON.parse(raw)); } catch { }
+      try { setImpersonating(JSON.parse(raw)); } catch { setImpersonating(null); }
+    } else {
+      setImpersonating(null);
     }
-  }, []);
+  }, [pathname]);
 
   const exitImpersonation = (router: ReturnType<typeof useRouter>) => {
     const adminToken = localStorage.getItem('admin_token');
@@ -30,6 +35,8 @@ function useImpersonationState() {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('impersonating_user');
     }
+    qc.clear(); // CRITICAL: Clear all cached user data
+    setImpersonating(null);
     router.push('/admin');
     router.refresh();
   };
