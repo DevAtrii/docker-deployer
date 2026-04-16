@@ -36,7 +36,7 @@ import { Label } from '@/components/ui/label';
 import {
   Play, Square, Pause, RotateCcw, Trash2, Terminal, Plus, Box,
   Loader2, RefreshCcw, MoreVertical, ExternalLink, Activity, HardDrive, Cpu,
-  Download, ChevronRight
+  Download, ChevronRight, ChevronLeft
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/src/data/api';
@@ -442,7 +442,7 @@ function LogsViewer({ containerId }: { containerId: string | null }) {
 
   const { data, isLoading, isPlaceholderData } = useQuery({
     queryKey: ['logs', containerId, limit, page],
-    queryFn: async () => (await apiClient.get(`/containers/${containerId}/logs?limit=${limit}&page=${page}`)).data.logs,
+    queryFn: async () => (await apiClient.get(`/containers/${containerId}/logs?limit=${limit}&page=${page}`)).data,
     enabled: !!containerId,
     placeholderData: (prev) => prev,
     refetchInterval: page === 1 ? 5000 : false, // Only auto-refresh latest logs
@@ -471,7 +471,8 @@ function LogsViewer({ containerId }: { containerId: string | null }) {
             variant="outline"
             size="sm"
             onClick={() => setPage(p => p + 1)}
-            className="h-8 text-[11px] font-bold uppercase"
+            disabled={!data?.hasMore}
+            className="h-8 text-[11px] font-bold uppercase transition-all"
           >
             <ChevronLeft className="mr-1 h-3 w-3" /> Older
           </Button>
@@ -480,7 +481,7 @@ function LogsViewer({ containerId }: { containerId: string | null }) {
             size="sm"
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="h-8 text-[11px] font-bold uppercase"
+            className="h-8 text-[11px] font-bold uppercase transition-all"
           >
             Newer <ChevronRight className="ml-1 h-3 w-3" />
           </Button>
@@ -523,15 +524,15 @@ function LogsViewer({ containerId }: { containerId: string | null }) {
         )}
         {isLoading && !data ? (
           <div className="text-zinc-500 animate-pulse font-mono text-xs">Connecting to log stream...</div>
-        ) : !data ? (
+        ) : !data?.logs ? (
           <div className="text-zinc-700 italic font-mono text-xs">No logs found in this window.</div>
         ) : (
           <pre className="whitespace-pre-wrap font-mono text-emerald-500/90 text-xs leading-relaxed selection:bg-emerald-500/20">
-            {data}
+            {data.logs}
           </pre>
         )}
       </ScrollArea>
-      
+
       <p className="text-[10px] text-muted-foreground text-center italic">
         {page === 1 ? "Showing latest logs. Auto-refreshing every 5s." : "Viewing historical logs. Auto-refresh paused."}
       </p>

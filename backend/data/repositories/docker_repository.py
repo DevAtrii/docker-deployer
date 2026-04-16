@@ -283,35 +283,40 @@ class DockerSDKRepository(DockerRepository):
             'cpu_limit': cpu_limit,
         }
 
-    def get_logs(self, user_id: str, container_id: str, limit: int = 100, page: int = 1) -> str:
+    def get_logs(self, user_id: str, container_id: str, limit: int = 100, page: int = 1) -> tuple[str, bool]:
         c = self._get_container(user_id, container_id)
         if str(limit).lower() == 'all':
-             return c.logs().decode('utf-8', errors='replace')
+             return c.logs().decode('utf-8', errors='replace'), False
         
-        # Calculate how many lines back we need to fetch
-        # Page 1: last 100 lines (tail=100)
-        # Page 2: last 200 lines, take first 100
-        fetch_tail = max(0, limit * page)
+        # Request one extra line to see if there's more for the next page
+        fetch_tail = (limit * page) + 1
         raw_logs = c.logs(tail=fetch_tail).decode('utf-8', errors='replace')
         lines = raw_logs.splitlines()
         
-        # Take the slice: if limit=100 and page=2, we want lines [-200:-100]
-        # But splitlines() gives us the lines from the tail we asked for.
-        # So if we asked for 200, we want the first 100 of those 200.
-        # e.g. [0:100] of the 200-line tail.
-        # If page=1, we requested 100, we want [0:100].
+        has_more = len(lines) > (limit * page)
         
-        # Wait, if tail=200, it returns the LAST 200 lines.
-        # The oldest lines in those 200 are at the beginning of the string.
-        # So:
-        # Page 1: tail=100. Return all.
-        # Page 2: tail=200. Return lines 1 to 100 (which are the 101-200 lines from the actual end).
-        
-        if len(lines) <= limit:
-            # If we requested more than available, just return what we have (first page case or end of logs)
-            return "\n".join(lines)
-        
-        return "\n".join(lines[:limit])
+        # If we have the extra line, skip it for the current page slice
+        # If has_more is true, lines[0] is the extra line from the previous page's perspective
+        if has_more:
+            # We have 101 lines. We want the last 100 for the current page?
+            # Wait, if Page 1 (limit 100) -> fetch 101. We want lines[1:].
+            # If Page 2 (limit 100) -> fetch 201. We want lines[1:101].
+            current_page_lines = lines[1:limit+1]
+        else:
+            # We got fewer lines than requested, so we have everything from the start up to limit*page
+            # We want the oldest 'limit' lines of this bunch.
+            # e.g. total 150 lines. Page 2 (limit 100) fetches 201. Gets 150.
+            # We want lines 0 to 50.
+            # Page 1 fetches 101. Gets 150? No, tail=101 gets last 101.
+            # This is getting confusing. Let's simplify.
+            
+            # If has_more is False, it means lines contains ALL logs from the start of the container
+            # up to the point where page 1 ends.
+            # If page=1, it's just the last 100 (or fewer).
+            # If page=2, it's the logs from 0 to 100.
+            current_page_lines = lines[:limit]
+
+        return "\n".join(current_page_lines), has_more
 
     def get_stats(self, user_id: str, container_id: str) -> dict:
         return self._get_container(user_id, container_id).stats(stream=False)

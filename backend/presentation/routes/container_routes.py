@@ -99,8 +99,8 @@ def get_container_routes(container_use_cases: ContainerUseCases, auth_use_cases)
         try:
             limit = int(request.args.get('limit', 100))
             page = int(request.args.get('page', 1))
-            logs = container_use_cases.get_logs(request.user_id, container_id, limit, page)
-            return jsonify({'logs': logs}), 200
+            logs, has_more = container_use_cases.get_logs(request.user_id, container_id, limit, page)
+            return jsonify({'logs': logs, 'hasMore': has_more}), 200
         except Exception as e:
             return jsonify({'message': str(e)}), 400
 
@@ -108,7 +108,7 @@ def get_container_routes(container_use_cases: ContainerUseCases, auth_use_cases)
     @token_required(auth_use_cases)
     def export_logs(container_id):
         try:
-            logs = container_use_cases.get_logs(request.user_id, container_id, limit='all')
+            logs, _ = container_use_cases.get_logs(request.user_id, container_id, limit='all')
             filename = f"container_{container_id}_logs.txt"
             return Response(
                 logs,
