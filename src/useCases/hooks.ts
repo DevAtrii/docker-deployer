@@ -49,6 +49,9 @@ export const useDeployContainer = () => {
       image: string;
       port_mappings: Record<string, string>;
       volumes?: { host_path: string; container_path: string; mode: string }[];
+      mem_limit?: string;
+      memswap_limit?: string;
+      cpu_limit?: number;
     }) => apiClient.post('/containers/deploy', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['containers'] }),
   });
