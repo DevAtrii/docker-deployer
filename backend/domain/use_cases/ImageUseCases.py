@@ -65,13 +65,13 @@ class ImageUseCases:
 
     # ── DockerHub Token Management ──────────────────────────────────────────
 
-    def add_token(self, user_id: str, alias: str, token: str) -> None:
+    def add_token(self, user_id: str, alias: str, token: str, username: str) -> None:
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise Exception("User not found")
         if any(t['alias'] == alias for t in user.docker_tokens):
             raise Exception(f"Token alias '{alias}' already exists.")
-        user.docker_tokens.append({'alias': alias, 'token': token})
+        user.docker_tokens.append({'alias': alias, 'token': token, 'username': username})
         self.user_repo.save(user)
 
     def delete_token(self, user_id: str, alias: str) -> None:

@@ -361,7 +361,7 @@ class DockerSDKRepository(DockerRepository):
             entry = next((t for t in user.docker_tokens if t.get('alias') == token_alias), None)
             if not entry:
                 raise Exception(f"Token alias '{token_alias}' not found.")
-            auth_config = {'username': user.username, 'password': entry['token']}
+            auth_config = {'username': entry.get('username'), 'password': entry['token']}
         elif user.docker_hub_token:
             auth_config = {'username': user.username, 'password': user.docker_hub_token}
 

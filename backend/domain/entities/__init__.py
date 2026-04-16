@@ -17,7 +17,7 @@ class User:
     cpu_limit: float = 0.0      # CPU cores, 0.0 = unlimited
     ram_limit_mb: int = 0       # 0 = unlimited
     docker_hub_token: Optional[str] = None  # legacy compat
-    docker_tokens: List[dict] = field(default_factory=list)  # [{alias, token}]
+    docker_tokens: List[dict] = field(default_factory=list)  # [{alias, token, username}]
 
     def dict(self):
         return {
@@ -29,6 +29,7 @@ class User:
             "cpu_limit": self.cpu_limit,
             "ram_limit_mb": self.ram_limit_mb,
             "token_aliases": [t["alias"] for t in self.docker_tokens],
+            "tokens_detailed": [{"alias": t["alias"], "username": t.get("username")} for t in self.docker_tokens],
         }
 
 @dataclass

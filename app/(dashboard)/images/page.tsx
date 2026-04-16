@@ -55,6 +55,7 @@ export default function ImagesPage() {
   // Token management modal
   const [tokenOpen, setTokenOpen] = useState(false);
   const [newAlias, setNewAlias] = useState('');
+  const [newUsername, setNewUsername] = useState('');
   const [newToken, setNewToken] = useState('');
 
   // Fetch stored token aliases
@@ -63,6 +64,7 @@ export default function ImagesPage() {
     queryFn: async () => (await apiClient.get('/images/tokens')).data,
   });
   const aliases: string[] = tokenData?.aliases ?? [];
+  const detailedTokens: { alias: string, username?: string }[] = tokenData?.tokens_detailed ?? [];
 
   const [taskId, setTaskId] = useState<string | null>(null);
   const { data: pullStatus } = usePullStatus(taskId);
@@ -102,10 +104,15 @@ export default function ImagesPage() {
   };
 
   const addTokenMutation = useMutation({
-    mutationFn: async () => apiClient.post('/images/tokens', { alias: newAlias, token: newToken }),
+    mutationFn: async () => apiClient.post('/images/tokens', { 
+      alias: newAlias, 
+      username: newUsername,
+      token: newToken 
+    }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['token-aliases'] });
       setNewAlias('');
+      setNewUsername('');
       setNewToken('');
       toast.success('Token saved successfully');
     },
@@ -312,13 +319,17 @@ export default function ImagesPage() {
                   <Input id="alias" value={newAlias} onChange={e => setNewAlias(e.target.value)} placeholder="org-token" className="h-9 shadow-inner" />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="user" className="text-xs">Docker Username</Label>
+                  <Input id="user" value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="rizwandevid" className="h-9 shadow-inner" />
+                </div>
+                <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="tok" className="text-xs">Access Token</Label>
                   <Input id="tok" type="password" value={newToken} onChange={e => setNewToken(e.target.value)} placeholder="dckr_pat_•••••" className="h-9 shadow-inner" />
                 </div>
               </div>
               <Button
                 onClick={() => addTokenMutation.mutate()}
-                disabled={!newAlias || !newToken || addTokenMutation.isPending}
+                disabled={!newAlias || !newUsername || !newToken || addTokenMutation.isPending}
                 className="w-full h-9"
               >
                 {addTokenMutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Zap className="mr-2 h-4 w-4" />}
@@ -336,18 +347,23 @@ export default function ImagesPage() {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {aliases.map(alias => (
-                      <div key={alias} className="flex items-center justify-between px-4 py-3 rounded-xl bg-card border border-border/50 shadow-sm group">
+                    {detailedTokens.map(token => (
+                      <div key={token.alias} className="flex items-center justify-between px-4 py-3 rounded-xl bg-card border border-border/50 shadow-sm group">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
                             <KeyRound className="h-4 w-4 text-primary" />
                           </div>
-                          <span className="text-sm font-semibold">{alias}</span>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold">{token.alias}</span>
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+                              User: {token.username || 'unknown'}
+                            </span>
+                          </div>
                         </div>
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => setTokenToDelete(alias)}
+                          onClick={() => setTokenToDelete(token.alias)}
                           className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 size={15} />
