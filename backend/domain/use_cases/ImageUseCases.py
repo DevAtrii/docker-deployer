@@ -113,3 +113,9 @@ class ImageUseCases:
         if not user:
             raise Exception("User not found")
         return [t['alias'] for t in user.docker_tokens]
+
+    def list_tokens_detailed(self, user_id: str) -> List[dict]:
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            raise Exception("User not found")
+        return [{"alias": t["alias"], "username": t.get("username"), "registry": t.get("registry")} for t in user.docker_tokens]

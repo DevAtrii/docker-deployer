@@ -55,7 +55,11 @@ def get_image_routes(image_use_cases: ImageUseCases, auth_use_cases) -> Blueprin
     def list_tokens():
         try:
             aliases = image_use_cases.list_token_aliases(request.user_id)
-            return jsonify({'aliases': aliases}), 200
+            detailed = image_use_cases.list_tokens_detailed(request.user_id)
+            return jsonify({
+                'aliases': aliases,
+                'tokens_detailed': detailed
+            }), 200
         except Exception as e:
             return jsonify({'message': str(e)}), 400
 
