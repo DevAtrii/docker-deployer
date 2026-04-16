@@ -50,9 +50,10 @@ export default function ContainersPage() {
 
   const [isDeployOpen, setIsDeployOpen] = useState(false);
   const [deployForm, setDeployForm] = useState({
-    name: '', image: '', internalPort: '', hostPort: '',
+    name: '', image: '',
     memLimit: '', memSwapLimit: '', cpuLimit: ''
   });
+  const [portMappings, setPortMappings] = useState<{ container: string; host: string }[]>([]);
   const [volumes, setVolumes] = useState<{ host_path: string; container_path: string; mode: string }[]>([]);
 
   const [logsModal, setLogsModal] = useState<{ isOpen: boolean; containerId: string | null }>({ isOpen: false, containerId: null });
@@ -76,12 +77,20 @@ export default function ContainersPage() {
     setVolumes(v => v.map((vol, idx) => (idx === i ? { ...vol, [key]: value } : vol)));
   const removeVolume = (i: number) => setVolumes(v => v.filter((_, idx) => idx !== i));
 
+  const addPortMapping = () => setPortMappings(p => [...p, { container: '', host: '' }]);
+  const updatePortMapping = (i: number, key: string, value: string) =>
+    setPortMappings(p => p.map((port, idx) => (idx === i ? { ...port, [key]: value } : port)));
+  const removePortMapping = (i: number) => setPortMappings(p => p.filter((_, idx) => idx !== i));
+
   const handleDeploy = async (e: React.FormEvent) => {
     e.preventDefault();
     const ports: Record<string, string> = {};
-    if (deployForm.internalPort && deployForm.hostPort) {
-      ports[`${deployForm.internalPort}/tcp`] = deployForm.hostPort;
-    }
+    portMappings.forEach(p => {
+      if (p.container && p.host) {
+        ports[`${p.container}/tcp`] = p.host;
+      }
+    });
+
     try {
       await deployMutation.mutateAsync({
         name: deployForm.name,
@@ -94,9 +103,10 @@ export default function ContainersPage() {
       });
       setIsDeployOpen(false);
       setDeployForm({
-        name: '', image: '', internalPort: '', hostPort: '',
+        name: '', image: '',
         memLimit: '', memSwapLimit: '', cpuLimit: ''
       });
+      setPortMappings([]);
       setVolumes([]);
       toast.success('Container scheduled for deployment');
     } catch (err: any) {
@@ -254,7 +264,7 @@ export default function ContainersPage() {
       </div>
 
       {/* Deploy Dialog */}
-      <Dialog open={isDeployOpen} onOpenChange={(val) => { if (!val) { setIsDeployOpen(false); setVolumes([]); } }}>
+      <Dialog open={isDeployOpen} onOpenChange={(val) => { if (!val) { setIsDeployOpen(false); setPortMappings([]); setVolumes([]); } }}>
         <DialogContent className="sm:max-w-[600px] border-border/50">
           <form onSubmit={handleDeploy}>
             <DialogHeader>
@@ -294,23 +304,40 @@ export default function ContainersPage() {
 
               <Separator className="opacity-50" />
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="intPort" className="text-xs">Container Port</Label>
-                  <Input id="intPort" type="number" value={deployForm.internalPort} onChange={e => setDeployForm({ ...deployForm, internalPort: e.target.value })} placeholder="80" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="hostPort" className="text-xs">Host Port</Label>
-                  <Input id="hostPort" type="number" value={deployForm.hostPort} onChange={e => setDeployForm({ ...deployForm, hostPort: e.target.value })} placeholder="12001" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cpu" className="text-xs">vCPUs</Label>
+                  <Label htmlFor="cpu">vCPU Limit</Label>
                   <Input id="cpu" type="number" step="0.1" value={deployForm.cpuLimit} onChange={e => setDeployForm({ ...deployForm, cpuLimit: e.target.value })} placeholder="0.5" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="ram" className="text-xs">RAM (MB)</Label>
+                  <Label htmlFor="ram">RAM Limit (MB)</Label>
                   <Input id="ram" type="number" value={deployForm.memLimit} onChange={e => setDeployForm({ ...deployForm, memLimit: e.target.value })} placeholder="512" />
                 </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="font-bold">Port Mappings</Label>
+                  <Button type="button" size="sm" variant="ghost" className="h-7 text-xs text-primary" onClick={addPortMapping}>
+                    <Plus className="mr-1 h-3 w-3" /> Add Port
+                  </Button>
+                </div>
+                {portMappings.length === 0 && <p className="text-[10px] text-muted-foreground italic">No ports exposed</p>}
+                {portMappings.map((p, i) => (
+                  <div key={i} className="flex gap-2 items-end group">
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-[10px] text-muted-foreground">Internal Port</Label>
+                      <Input type="number" value={p.container} onChange={e => updatePortMapping(i, 'container', e.target.value)} placeholder="80" className="h-8 text-xs font-mono" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-[10px] text-muted-foreground">Host Port</Label>
+                      <Input type="number" value={p.host} onChange={e => updatePortMapping(i, 'host', e.target.value)} placeholder="12001" className="h-8 text-xs font-mono" />
+                    </div>
+                    <Button type="button" size="icon" variant="ghost" onClick={() => removePortMapping(i)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
               </div>
 
               <div className="space-y-3">
