@@ -95,6 +95,15 @@ def get_image_routes(image_use_cases: ImageUseCases, auth_use_cases) -> Blueprin
         except Exception as e:
             return jsonify({'message': str(e)}), 400
 
+    @bp.route('/tokens/<alias>/test', methods=['POST'])
+    @token_required(auth_use_cases)
+    def test_token(alias: str):
+        try:
+            image_use_cases.test_token_login(request.user_id, alias)
+            return jsonify({'message': 'Login successful!'}), 200
+        except Exception as e:
+            return jsonify({'message': str(e)}), 401
+
     @bp.route('/tokens/<alias>', methods=['DELETE'])
     @token_required(auth_use_cases)
     def delete_token(alias: str):

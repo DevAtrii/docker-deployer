@@ -37,7 +37,8 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import {
   Box, DownloadCloud, KeyRound, Loader2, Plus, Trash2,
-  Terminal, Database, HardDrive, ShieldCheck, Zap
+  Terminal, Database, HardDrive, ShieldCheck, Zap,
+  Eye, EyeOff, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { apiClient } from '@/src/data/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -59,6 +60,8 @@ export default function ImagesPage() {
   const [newRegistry, setNewRegistry] = useState('https://index.docker.io/v1/');
   const [newToken, setNewToken] = useState('');
   const [editingAlias, setEditingAlias] = useState<string | null>(null);
+  const [visibleTokens, setVisibleTokens] = useState<Set<string>>(new Set());
+  const [testResults, setTestResults] = useState<Record<string, { success: boolean, message: string }>>({});
 
   // Fetch stored token aliases
   const { data: tokenData } = useQuery({
@@ -66,7 +69,7 @@ export default function ImagesPage() {
     queryFn: async () => (await apiClient.get('/images/tokens')).data,
   });
   const aliases: string[] = tokenData?.aliases ?? [];
-  const detailedTokens: { alias: string, username?: string, registry?: string }[] = tokenData?.tokens_detailed ?? [];
+  const detailedTokens: { alias: string, username?: string, registry?: string, token?: string }[] = tokenData?.tokens_detailed ?? [];
 
   const [taskId, setTaskId] = useState<string | null>(null);
   const { data: pullStatus } = usePullStatus(taskId);
@@ -142,6 +145,27 @@ export default function ImagesPage() {
     setNewUsername(token.username || '');
     setNewRegistry(token.registry || 'https://index.docker.io/v1/');
     setNewToken(''); // Don't populate secret token
+  };
+
+  const testTokenMutation = useMutation({
+    mutationFn: async (alias: string) => apiClient.post(`/images/tokens/${encodeURIComponent(alias)}/test`),
+    onSuccess: (_, alias) => {
+      setTestResults(prev => ({ ...prev, [alias]: { success: true, message: 'Login Success' } }));
+      toast.success(`${alias}: Login successful!`);
+    },
+    onError: (err: any, alias) => {
+      setTestResults(prev => ({ ...prev, [alias]: { success: false, message: err.response?.data?.message || 'Login Failed' } }));
+      toast.error(`${alias}: ${err.response?.data?.message || 'Login failed'}`);
+    },
+  });
+
+  const toggleTokenVisibility = (alias: string) => {
+    setVisibleTokens(prev => {
+      const next = new Set(prev);
+      if (next.has(alias)) next.delete(alias);
+      else next.add(alias);
+      return next;
+    });
   };
 
   const deleteTokenMutation = useMutation({
@@ -393,36 +417,79 @@ export default function ImagesPage() {
                 ) : (
                   <div className="flex flex-col gap-2">
                     {detailedTokens.map(token => (
-                      <div key={token.alias} className="flex items-center justify-between px-4 py-3 rounded-xl bg-card border border-border/50 shadow-sm group">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <KeyRound className="h-4 w-4 text-primary" />
+                      <div key={token.alias} className="flex flex-col gap-2 p-3 rounded-2xl bg-card border border-border/50 shadow-sm group">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <KeyRound className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-semibold truncate text-primary/90">{token.alias}</span>
+                              <span className="text-[10px] text-muted-foreground truncate opacity-70">
+                                {token.username} @ {token.registry?.replace('https://', '').replace(/\/v1\/?$/, '')}
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-semibold truncate text-primary/90">{token.alias}</span>
-                            <span className="text-[10px] text-muted-foreground truncate opacity-70">
-                              {token.username} @ {token.registry?.replace('https://', '').replace(/\/v1\/?$/, '')}
-                            </span>
+                          <div className="flex items-center gap-1">
+                            {testResults[token.alias] && (
+                              <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${testResults[token.alias].success ? 'bg-emerald-500/10 text-emerald-500' : 'bg-destructive/10 text-destructive'}`}>
+                                {testResults[token.alias].success ? <CheckCircle2 size={10} /> : <AlertCircle size={10} />}
+                                {testResults[token.alias].success ? 'Success' : 'Error'}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                disabled={testTokenMutation.isPending}
+                                onClick={() => testTokenMutation.mutate(token.alias)}
+                                className="h-7 w-7 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/5"
+                                title="Test Login"
+                              >
+                                {testTokenMutation.isPending && testTokenMutation.variables === token.alias ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 size={14} />}
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleEditToken(token)}
+                                className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                title="Edit"
+                              >
+                                <Terminal size={14} />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => setTokenToDelete(token.alias)}
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/5"
+                                title="Delete"
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleEditToken(token)}
-                            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/5"
+                        
+                        {/* Token Secret Display */}
+                        <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl bg-muted/30 border border-border/30">
+                          <code className="text-[10px] font-mono truncate opacity-60">
+                            {visibleTokens.has(token.alias) ? token.token : '••••••••••••••••••••••••'}
+                          </code>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-muted-foreground hover:text-primary"
+                            onClick={() => toggleTokenVisibility(token.alias)}
                           >
-                            <Terminal size={14} />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => setTokenToDelete(token.alias)}
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5"
-                          >
-                            <Trash2 size={14} />
+                            {visibleTokens.has(token.alias) ? <EyeOff size={12} /> : <Eye size={12} />}
                           </Button>
                         </div>
+
+                        {testResults[token.alias] && !testResults[token.alias].success && (
+                          <div className="px-2 py-1 bg-destructive/5 text-destructive text-[9px] rounded-lg animate-in slide-in-from-top-1 duration-200">
+                            {testResults[token.alias].message}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

@@ -83,6 +83,11 @@ class DockerRepository(ABC):
     def remove_image(self, user: User, image_name: str) -> None:
         pass
 
+    @abstractmethod
+    def test_login(self, username: str, token: str, registry: str) -> None:
+        """Throws exception if login fails."""
+        pass
+
 class FileRepository(ABC):
     @abstractmethod
     def list_files(self, user_id: str, relative_dir: str) -> List[FileItem]:

@@ -118,4 +118,29 @@ class ImageUseCases:
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise Exception("User not found")
-        return [{"alias": t["alias"], "username": t.get("username"), "registry": t.get("registry")} for t in user.docker_tokens]
+        return [
+            {
+                "alias": t["alias"], 
+                "username": t.get("username"), 
+                "registry": t.get("registry"),
+                "token": t.get("token")  # returning raw token as requested
+            } for t in user.docker_tokens
+        ]
+
+    def test_token_login(self, user_id: str, alias: str) -> None:
+        user = self.user_repo.get_by_id(user_id)
+        if not user:
+            raise Exception("User not found")
+        
+        entry = next((t for t in user.docker_tokens if t['alias'] == alias), None)
+        if not entry:
+            raise Exception(f"Token alias '{alias}' not found.")
+            
+        username = entry.get('username')
+        token = entry.get('token')
+        registry = entry.get('registry') or 'https://index.docker.io/v1/'
+        
+        if not username or not token:
+            raise Exception("Missing username or token for this alias.")
+            
+        self.docker_repo.test_login(username, token, registry)

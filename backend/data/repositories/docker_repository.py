@@ -378,3 +378,13 @@ class DockerSDKRepository(DockerRepository):
 
     def remove_image(self, user: User, image_name: str) -> None:
         self._remove_user_image(user.id, image_name)
+
+    def test_login(self, username: str, token: str, registry: str) -> None:
+        try:
+            self.client.login(username=username, password=token, registry=registry)
+        except Exception as e:
+            # Re-raise clean message
+            msg = str(e)
+            if "status code 401" in msg:
+                raise Exception("Unauthorized: Invalid username or token.")
+            raise Exception(f"Login failed: {msg}")
