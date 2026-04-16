@@ -227,7 +227,7 @@ export default function ImagesPage() {
           <Card key={img.id} className="group border-border/50 hover:border-primary/30 transition-all hover:shadow-lg overflow-hidden">
             <CardHeader className="pb-4 bg-muted/30 border-b border-border/50">
               <div className="flex items-start justify-between gap-2 text-sm font-bold">
-                <CardTitle className="text-base truncate tracking-tight" title={img.tags[0] || img.id}>
+                <CardTitle className="text-base tracking-tight line-clamp-2 leading-tight min-h-[2.5rem]" title={img.tags[0] || img.id}>
                   {img.tags[0] || 'untagged'}
                 </CardTitle>
                 <Badge variant="secondary" className="shrink-0 font-mono text-[10px]">
