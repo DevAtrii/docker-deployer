@@ -14,6 +14,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -57,6 +67,10 @@ export default function ImagesPage() {
   const [taskId, setTaskId] = useState<string | null>(null);
   const { data: pullStatus } = usePullStatus(taskId);
   const pullMutation = usePullImage();
+
+  // Confirmation states
+  const [imageToDelete, setImageToDelete] = useState<{ name: string, id: string } | null>(null);
+  const [tokenToDelete, setTokenToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (pullStatus?.status === 'completed') {
@@ -177,7 +191,7 @@ export default function ImagesPage() {
                     size="sm" 
                     variant="ghost" 
                     className="text-destructive hover:bg-destructive/10 hover:text-destructive h-8" 
-                    onClick={() => { if(confirm(`Untrack ${img.tags[0]} from deployer?`)) handleRemoveImage(img.tags[0] || img.id) }}
+                    onClick={() => setImageToDelete({ name: img.tags[0] || 'untagged', id: img.id })}
                   >
                     <Trash2 className="mr-2 h-4 w-4" /> Untrack
                   </Button>
@@ -333,7 +347,7 @@ export default function ImagesPage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => { if (confirm(`Delete token "${alias}"?`)) deleteTokenMutation.mutate(alias); }}
+                          onClick={() => setTokenToDelete(alias)}
                           className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 size={15} />
@@ -347,6 +361,55 @@ export default function ImagesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialogs */}
+      <AlertDialog open={!!imageToDelete} onOpenChange={(val) => { if (!val) setImageToDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will untrack <strong>{imageToDelete?.name}</strong> from the deployer. 
+              The actual image will remain on the host but won't be visible here.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (imageToDelete) handleRemoveImage(imageToDelete.id);
+                setImageToDelete(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Untrack Image
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!tokenToDelete} onOpenChange={(val) => { if (!val) setTokenToDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete authentication token?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the token alias <strong>{tokenToDelete}</strong>? 
+              You will need to re-add it if you want to pull images from this registry later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (tokenToDelete) deleteTokenMutation.mutate(tokenToDelete);
+                setTokenToDelete(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Token
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
