@@ -1,7 +1,9 @@
-name: "Publish Release"
+name: "Build Packages"
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
 
@@ -9,23 +11,11 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  package:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Type Check
-        run: npx tsc --noEmit
 
       - name: Prepare Backend Archive
         run: zip -r docker-deployer-backend.zip backend/
@@ -38,11 +28,12 @@ jobs:
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             docker-deployer-backend.zip
             docker-deployer-frontend.zip
+          tag_name: latest
+          name: "Latest Build"
           draft: false
           prerelease: false
           generate_release_notes: true
