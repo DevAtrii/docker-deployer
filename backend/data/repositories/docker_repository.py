@@ -154,13 +154,24 @@ class DockerSDKRepository(DockerRepository):
                          base_data_dir: Optional[str] = None,
                          mem_limit: Optional[str] = None,
                          memswap_limit: Optional[str] = None,
-                         cpu_limit: Optional[float] = None) -> ContainerInfo:
+                         cpu_limit: Optional[float] = None,
+                         force_override: bool = False) -> ContainerInfo:
         """
         volumes: list of {host_path: str, container_path: str, mode: 'ro'|'rw'}
         host_path is relative to user's storage dir; we resolve & validate it.
         """
         prefix = self._get_prefix(user.id)
         container_name = f"{prefix}{name}"
+
+        # If an existing container has the same name, we only allow replacing a
+        # running one when the caller explicitly confirms force_override.
+        try:
+            existing = self.client.containers.get(container_name)
+            if existing.status == 'running' and not force_override:
+                raise Exception(f"CONTAINER_ALREADY_RUNNING:{name}")
+            existing.remove(force=True)
+        except docker.errors.NotFound:
+            pass
 
         # Validate port range
         if port_mappings:

@@ -25,7 +25,8 @@ class ContainerUseCases:
                          volumes: Optional[List[Dict]] = None,
                          mem_limit: Optional[str] = None,
                          memswap_limit: Optional[str] = None,
-                         cpu_limit: Optional[float] = None) -> ContainerInfo:
+                         cpu_limit: Optional[float] = None,
+                         force_override: bool = False) -> ContainerInfo:
         user = self.user_repo.get_by_id(user_id)
         if not user:
             raise Exception("User not found")
@@ -33,7 +34,8 @@ class ContainerUseCases:
             user, name, image, port_mappings,
             volumes=volumes, base_data_dir=self.data_dir,
             mem_limit=mem_limit, memswap_limit=memswap_limit,
-            cpu_limit=cpu_limit
+            cpu_limit=cpu_limit,
+            force_override=force_override,
         )
 
     def start_container(self, user_id: str, container_id: str) -> None:
@@ -64,7 +66,7 @@ class ContainerUseCases:
             raise Exception("Redeploy task not found.")
         return self.active_redeploys[task_id]
 
-    def redeploy_container_async(self, user_id: str, container_id: str) -> str:
+    def redeploy_container_async(self, user_id: str, container_id: str, token_alias: Optional[str] = None) -> str:
         """
         Fire-and-forget redeploy:
         1. Inspect current config
@@ -105,7 +107,7 @@ class ContainerUseCases:
                 task['status'] = 'running'
                 log(f"\n[1/3] Pulling {image}...")
                 try:
-                    for line in self.docker_repo.pull_image_streaming(user, image):
+                    for line in self.docker_repo.pull_image_streaming(user, image, token_alias=token_alias):
                         status_line = line.get('status', '')
                         if 'id' in line:
                             status_line = f"  {line['id']}: {status_line}"

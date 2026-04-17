@@ -52,6 +52,7 @@ export const useDeployContainer = () => {
       mem_limit?: string;
       memswap_limit?: string;
       cpu_limit?: number;
+      force_override?: boolean;
     }) => apiClient.post('/containers/deploy', data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['containers'] }),
   });
@@ -79,8 +80,17 @@ export const useContainerStats = (containerId: string, enabled: boolean) => {
 
 export const useRedeployContainer = () => {
   return useMutation({
-    mutationFn: async (containerId: string) =>
-      (await apiClient.post(`/containers/${containerId}/redeploy`)).data as { task_id: string; message: string },
+    mutationFn: async ({
+      containerId,
+      token_alias,
+    }: {
+      containerId: string;
+      token_alias?: string | null;
+    }) =>
+      (await apiClient.post(`/containers/${containerId}/redeploy`, { token_alias: token_alias || null })).data as {
+        task_id: string;
+        message: string;
+      },
   });
 };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useContainers, useDeployContainer, useContainerAction, useImages, useRedeployContainer, useRedeployStatus, useContainerStats } from '@/src/useCases/hooks';
+import { useContainers, useDeployContainer, useContainerAction, useImages, useRedeployContainer, useRedeployStatus, useContainerStats, useProfile } from '@/src/useCases/hooks';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,7 @@ import { toast } from 'sonner';
 export default function ContainersPage() {
   const { data: containers, isLoading } = useContainers();
   const { data: trackedImages } = useImages();
+  const { data: profile } = useProfile();
   const deployMutation = useDeployContainer();
   const actionMutation = useContainerAction();
   const qc = useQueryClient();
@@ -56,12 +57,20 @@ export default function ContainersPage() {
   });
   const [portMappings, setPortMappings] = useState<{ container: string; host: string }[]>([]);
   const [volumes, setVolumes] = useState<{ host_path: string; container_path: string; mode: string }[]>([]);
+  const [deployOverrideDialog, setDeployOverrideDialog] = useState(false);
+  const [pendingDeployPayload, setPendingDeployPayload] = useState<any | null>(null);
 
   const [logsModal, setLogsModal] = useState<{ isOpen: boolean; containerId: string | null }>({ isOpen: false, containerId: null });
 
   // Redeploy state
   const redeployMutation = useRedeployContainer();
   const [redeployTaskId, setRedeployTaskId] = useState<string | null>(null);
+  const [redeployDialog, setRedeployDialog] = useState<{ isOpen: boolean; containerId: string; containerName: string }>({
+    isOpen: false,
+    containerId: '',
+    containerName: '',
+  });
+  const [selectedRedeployAlias, setSelectedRedeployAlias] = useState('none');
   const { data: redeployStatus } = useRedeployStatus(redeployTaskId);
 
   useEffect(() => {
@@ -83,34 +92,48 @@ export default function ContainersPage() {
     setPortMappings(p => p.map((port, idx) => (idx === i ? { ...port, [key]: value } : port)));
   const removePortMapping = (i: number) => setPortMappings(p => p.filter((_, idx) => idx !== i));
 
-  const handleDeploy = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const buildDeployPayload = () => {
     const ports: Record<string, string> = {};
     portMappings.forEach(p => {
       if (p.container && p.host) {
         ports[`${p.container}/tcp`] = p.host;
       }
     });
+    return {
+      name: deployForm.name,
+      image: deployForm.image,
+      port_mappings: ports,
+      volumes: volumes.filter(v => v.host_path && v.container_path),
+      mem_limit: deployForm.memLimit ? `${deployForm.memLimit}m` : undefined,
+      memswap_limit: deployForm.memSwapLimit ? `${deployForm.memSwapLimit}m` : undefined,
+      cpu_limit: deployForm.cpuLimit ? parseFloat(deployForm.cpuLimit) : undefined,
+    };
+  };
 
+  const submitDeploy = async (payload: any, forceOverride = false) => {
+    await deployMutation.mutateAsync({ ...payload, force_override: forceOverride });
+    setIsDeployOpen(false);
+    setDeployForm({
+      name: '', image: '',
+      memLimit: '', memSwapLimit: '', cpuLimit: ''
+    });
+    setPortMappings([]);
+    setVolumes([]);
+    setPendingDeployPayload(null);
+  };
+
+  const handleDeploy = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = buildDeployPayload();
     try {
-      await deployMutation.mutateAsync({
-        name: deployForm.name,
-        image: deployForm.image,
-        port_mappings: ports,
-        volumes: volumes.filter(v => v.host_path && v.container_path),
-        mem_limit: deployForm.memLimit ? `${deployForm.memLimit}m` : undefined,
-        memswap_limit: deployForm.memSwapLimit ? `${deployForm.memSwapLimit}m` : undefined,
-        cpu_limit: deployForm.cpuLimit ? parseFloat(deployForm.cpuLimit) : undefined,
-      });
-      setIsDeployOpen(false);
-      setDeployForm({
-        name: '', image: '',
-        memLimit: '', memSwapLimit: '', cpuLimit: ''
-      });
-      setPortMappings([]);
-      setVolumes([]);
+      await submitDeploy(payload, false);
       toast.success('Container scheduled for deployment');
     } catch (err: any) {
+      if (err.response?.status === 409 && err.response?.data?.code === 'CONTAINER_ALREADY_RUNNING') {
+        setPendingDeployPayload(payload);
+        setDeployOverrideDialog(true);
+        return;
+      }
       toast.error(err.response?.data?.message || 'Deployment failed.');
     }
   };
@@ -124,10 +147,12 @@ export default function ContainersPage() {
     }
   }
 
-  const handleRedeploy = async (containerId: string, containerName: string) => {
+  const handleRedeploy = async (containerId: string, tokenAlias?: string | null) => {
     try {
-      const res = await redeployMutation.mutateAsync(containerId);
+      const res = await redeployMutation.mutateAsync({ containerId, token_alias: tokenAlias || null });
       setRedeployTaskId(res.task_id);
+      setRedeployDialog({ isOpen: false, containerId: '', containerName: '' });
+      setSelectedRedeployAlias('none');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to start redeploy.');
     }
@@ -214,7 +239,7 @@ export default function ContainersPage() {
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-primary focus:text-primary focus:bg-primary/5"
-                      onClick={() => handleRedeploy(c.id, c.name)}
+                      onClick={() => setRedeployDialog({ isOpen: true, containerId: c.id, containerName: c.name })}
                       disabled={redeployMutation.isPending}
                     >
                       <RefreshCcw className="mr-2 h-4 w-4" /> Force Redeploy
@@ -390,6 +415,81 @@ export default function ContainersPage() {
           <div className="px-6 pb-6">
             <LogsViewer containerId={logsModal.containerId} />
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deployOverrideDialog} onOpenChange={setDeployOverrideDialog}>
+        <DialogContent className="sm:max-w-[460px] border-border/50">
+          <DialogHeader>
+            <DialogTitle>Container already running</DialogTitle>
+            <DialogDescription>
+              A running container with this name already exists. Override it by stopping and removing the current one, then deploy the new instance.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeployOverrideDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={!pendingDeployPayload || deployMutation.isPending}
+              onClick={async () => {
+                if (!pendingDeployPayload) return;
+                try {
+                  await submitDeploy(pendingDeployPayload, true);
+                  setDeployOverrideDialog(false);
+                  toast.success('Running container overridden and redeployed.');
+                } catch (err: any) {
+                  toast.error(err.response?.data?.message || 'Failed to override running container.');
+                }
+              }}
+            >
+              {deployMutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
+              Override & Deploy
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={redeployDialog.isOpen} onOpenChange={(val) => setRedeployDialog((prev) => ({ ...prev, isOpen: val }))}>
+        <DialogContent className="sm:max-w-[500px] border-border/50">
+          <DialogHeader>
+            <DialogTitle>Redeploy Authentication</DialogTitle>
+            <DialogDescription>
+              Choose a registry token before redeploying <span className="font-semibold">{redeployDialog.containerName}</span>. Keep it public if the image does not need authentication.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-3">
+            <Label htmlFor="redeploy-token">Token</Label>
+            <Select value={selectedRedeployAlias} onValueChange={setSelectedRedeployAlias}>
+              <SelectTrigger id="redeploy-token">
+                <SelectValue placeholder="Public (No Token)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Public (No Token)</SelectItem>
+                {(profile?.token_aliases || []).map((alias) => (
+                  <SelectItem key={alias} value={alias}>{alias}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRedeployDialog({ isOpen: false, containerId: '', containerName: '' })}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() =>
+                handleRedeploy(
+                  redeployDialog.containerId,
+                  selectedRedeployAlias === 'none' ? null : selectedRedeployAlias
+                )
+              }
+              disabled={redeployMutation.isPending || !redeployDialog.containerId}
+            >
+              {redeployMutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
+              Start Redeploy
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

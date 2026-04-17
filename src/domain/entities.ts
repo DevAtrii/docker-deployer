@@ -7,6 +7,7 @@ export interface User {
   cpu_limit: number;       // 0 = unlimited
   ram_limit_mb: number;    // 0 = unlimited
   token_aliases: string[];
+  tokens_detailed?: { alias: string; username?: string; registry?: string }[];
 }
 
 export interface ContainerInfo {

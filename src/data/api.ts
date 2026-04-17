@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Uses next.js rewrites or an env variable for external host
-export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://docker-deployer-api.webinto.app/api';
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:2050/api';
 
 export const apiClient = axios.create({
   baseURL: BACKEND_URL,

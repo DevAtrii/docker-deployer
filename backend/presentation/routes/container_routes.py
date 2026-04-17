@@ -43,9 +43,18 @@ def get_container_routes(container_use_cases: ContainerUseCases, auth_use_cases)
                 mem_limit=data.get('mem_limit'),
                 memswap_limit=data.get('memswap_limit'),
                 cpu_limit=data.get('cpu_limit'),
+                force_override=bool(data.get('force_override', False)),
             )
             return jsonify(asdict(c)), 201
         except Exception as e:
+            msg = str(e)
+            if msg.startswith('CONTAINER_ALREADY_RUNNING:'):
+                container_name = msg.split(':', 1)[1]
+                return jsonify({
+                    'message': f"Container '{container_name}' is currently running.",
+                    'code': 'CONTAINER_ALREADY_RUNNING',
+                    'container_name': container_name,
+                }), 409
             return jsonify({'message': str(e)}), 400
 
     @bp.route('/<container_id>/start', methods=['POST'])
@@ -132,7 +141,12 @@ def get_container_routes(container_use_cases: ContainerUseCases, auth_use_cases)
     def redeploy_container(container_id):
         """Fire-and-forget: pull fresh image + stop + remove + redeploy same config."""
         try:
-            task_id = container_use_cases.redeploy_container_async(request.user_id, container_id)
+            data = request.json or {}
+            task_id = container_use_cases.redeploy_container_async(
+                request.user_id,
+                container_id,
+                token_alias=data.get('token_alias'),
+            )
             return jsonify({'task_id': task_id, 'message': 'Redeploy started'}), 202
         except Exception as e:
             return jsonify({'message': str(e)}), 400

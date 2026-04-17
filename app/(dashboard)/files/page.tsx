@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useFiles, useFileActions } from '@/src/useCases/hooks';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,7 +39,7 @@ import { toast } from 'sonner';
 
 export default function FilesPage() {
   const [currentPath, setCurrentPath] = useState('');
-  const { data: files, isLoading } = useFiles(currentPath);
+  const { data: files, isLoading, isFetching } = useFiles(currentPath);
   const actions = useFileActions();
 
   const [dirModal, setDirModal] = useState(false);
@@ -129,7 +129,7 @@ export default function FilesPage() {
             <Plus className="mr-2 h-4 w-4" /> New File
           </Button>
           <Button size="sm" onClick={() => setDirModal(true)} className="flex-1 md:flex-none">
-            <Folder className="mr-2 h-4 w-4" /> Create Folder
+            <Folder className="mr-2 h-4 w-4" /> New Folder
           </Button>
         </div>
       </div>
@@ -144,7 +144,7 @@ export default function FilesPage() {
                 </BreadcrumbLink>
               </BreadcrumbItem>
               {pathParts.map((part, i) => (
-                <React.Fragment key={i}>
+                <Fragment key={i}>
                   <BreadcrumbSeparator />
                   <BreadcrumbItem>
                     {i === pathParts.length - 1 ? (
@@ -155,11 +155,17 @@ export default function FilesPage() {
                       </BreadcrumbLink>
                     )}
                   </BreadcrumbItem>
-                </React.Fragment>
+                </Fragment>
               ))}
             </BreadcrumbList>
           </Breadcrumb>
           <div className="flex items-center gap-2">
+            {isFetching && (
+              <Badge variant="secondary" className="h-7 px-2 text-[10px] uppercase tracking-wide gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Loading
+              </Badge>
+            )}
              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goBack} disabled={!currentPath}>
                <ChevronLeft className="h-4 w-4" />
              </Button>
@@ -228,6 +234,16 @@ export default function FilesPage() {
                     </TableCell>
                   </TableRow>
                 ))
+              )}
+              {!isLoading && isFetching && (
+                <TableRow>
+                  <TableCell colSpan={3} className="h-12 bg-primary/5">
+                    <div className="flex items-center justify-center gap-2 text-xs text-primary font-medium">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Loading directory contents...
+                    </div>
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
@@ -323,5 +339,3 @@ export default function FilesPage() {
     </div>
   );
 }
-
-import React from 'react';
